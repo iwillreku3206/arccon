@@ -3,6 +3,8 @@ import { SocketStatusStore } from "./SocketStore.svelte"
 
 type TestMessage = { message: string }
 type UserInfo = { name: string, idNumber: string }
+type Move = "rock" | "paper" | "scissors" | "none"
+type MoveAction = { move: Move }
 
 export class TestClient extends ArcconClient<UserInfo> {
   protected async onConnect(): Promise<void> {
@@ -24,9 +26,8 @@ export class TestClient extends ArcconClient<UserInfo> {
     })
   }
 
-
-  public async sendTestMessage(message: string) {
-    await this.rawSend("test_message", { message })
+  public async sendMove(move: Move) {
+    await this.rawSend<MoveAction>("move", { move })
   }
 
   protected onError(): void { }

@@ -5,15 +5,15 @@ import process from "node:process";
 
 process.on("uncaughtException", (r) => console.log(r))
 
-export type ArcconServerEvent<T extends any> = (params: T, socket: Socket) => Promise<void>
+export type ArcconServerEvent<T extends any, U> = (params: T, socket: Socket, user: U) => Promise<void>
 
 export abstract class ArcconServer<UserInfo> {
   private ioServer: Server
   protected clients: { [userId: string]: { user: UserInfo, socket: Socket } }
   private displays: Socket[]
   private playerCodes: { [code: string]: string } // maps codes to user ids
-  private displayKey: string
-  private events: { [type: string]: (p: any, socket: Socket) => Promise<void> }
+  public displayKey: string
+  private events: { [type: string]: (p: any, socket: Socket, userInfo: UserInfo) => Promise<void> }
 
   protected abstract getUserInfo(userId: string): Promise<UserInfo>;
   protected abstract onGameEnd(): Promise<{ [userId: string]: number }>;
@@ -30,8 +30,6 @@ export abstract class ArcconServer<UserInfo> {
   }
 
   public listen(port: number) {
-    console.log("Listening")
-    console.log(this.generateUserCode(6, "asdf"))
     this.ioServer.listen(port)
   }
 
@@ -48,7 +46,7 @@ export abstract class ArcconServer<UserInfo> {
           socket.emitWithAck("user_info", JSON.stringify(userInfo))
 
           for (const event in server.events) {
-            socket.on(`game__${event}`, (p) => server.events[event](p, socket))
+            socket.on(`game__${event}`, (p) => server.events[event](JSON.parse(p), socket, userInfo))
           }
 
           server.clients[userId] = {
@@ -56,13 +54,13 @@ export abstract class ArcconServer<UserInfo> {
             user: userInfo
           }
         } else {
-          socket.disconnect()
+          socket.disconnect(true)
         }
       } else if (auth.type == 'display') {
         if (auth.code == this.displayKey) {
           this.displays.push(socket)
         } else {
-          socket.disconnect()
+          socket.disconnect(true)
         }
       }
     }
@@ -74,7 +72,7 @@ export abstract class ArcconServer<UserInfo> {
     }
   }
 
-  public on<P extends any>(type: string, cb: ArcconServerEvent<P>) {
+  public on<P extends any>(type: string, cb: ArcconServerEvent<P, UserInfo>) {
     this.events[type] = cb
   }
 

@@ -20,8 +20,23 @@
     </button>
   </div>
   <div class="controller">
-    <button type="button">Rock</button>
-    <button type="button">Paper</button>
-    <button type="button">Scissors</button>
+    <button
+      type="button"
+      onclick={() => SocketStore.sock && SocketStore.sock.sendMove("rock")}
+    >
+      Rock
+    </button>
+    <button
+      type="button"
+      onclick={() => SocketStore.sock && SocketStore.sock.sendMove("paper")}
+    >
+      Paper
+    </button>
+    <button
+      type="button"
+      onclick={() => SocketStore.sock && SocketStore.sock.sendMove("scissors")}
+    >
+      Scissors
+    </button>
   </div>
 </main>
